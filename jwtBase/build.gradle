@@ -37,7 +37,6 @@ dependencies {
 	// Swagger
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2")
 
-
 	// For Java 8 Date/Time support
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 }

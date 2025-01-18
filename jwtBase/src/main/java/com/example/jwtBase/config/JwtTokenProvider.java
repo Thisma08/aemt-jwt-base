@@ -6,12 +6,15 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.springframework.security.core.GrantedAuthority;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -22,11 +25,15 @@ public class JwtTokenProvider {
     public String generateToken(Authentication authentication) {
 
         String username = authentication.getName();
+        var authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
         Date currentDate = new Date();
         Date expireDate = new Date(currentDate.getTime() + jwtExpirationDate);
 
         String token = Jwts.builder()
                 .subject(username)
+                .claim("roles", authorities)
                 .issuedAt(new Date())
                 .expiration(expireDate)
                 .signWith(key(), SignatureAlgorithm.HS256)
@@ -38,8 +45,6 @@ public class JwtTokenProvider {
     private Key key(){
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
-
-
 
     public String generateSecretKey() {
         int length = 32;
@@ -56,6 +61,15 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    public List getRoles(String token){
+        return Jwts.parser()
+                .verifyWith((SecretKey) key())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("roles", List.class);
     }
 
     public boolean validateToken(String token){
